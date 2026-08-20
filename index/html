@@ -1,0 +1,1394 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>시계 탐험대 — 60진법 수직선</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;700;900&display=swap');
+
+:root {
+  --bg: #fdf6ee;
+  --card: #fffdf8;
+  --border: #e8dcc8;
+  --text: #2d2012;
+  --muted: #8a7560;
+  --blue: #3b6dff;
+  --blue-light: #e8efff;
+  --teal: #0fa896;
+  --teal-light: #e0f7f5;
+  --red: #e84545;
+  --red-light: #ffeaea;
+  --amber: #f5a623;
+  --amber-light: #fff4e0;
+  --green: #2dba6c;
+  --green-light: #e4f9ed;
+  --purple: #7c4dff;
+  --purple-light: #f0ebff;
+  --shadow: 0 4px 20px rgba(45,32,18,0.10);
+  --radius: 20px;
+  --font-main: 'Noto Sans KR', sans-serif;
+  --font-fun: 'Gaegu', cursive;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(59,109,255,0.06) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(15,168,150,0.06) 0%, transparent 40%);
+}
+
+/* ── 헤더 ── */
+.header {
+  background: var(--card);
+  border-bottom: 2px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.header-title {
+  font-family: var(--font-fun);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: -0.01em;
+}
+.header-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* 단계 진행바 */
+.stage-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.stage-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 2px solid var(--border);
+  background: white;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .25s;
+  position: relative;
+}
+.stage-pill.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59,109,255,0.3);
+}
+.stage-pill.done {
+  background: var(--green-light);
+  border-color: var(--green);
+  color: var(--green);
+}
+.stage-pill.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.stage-pill .lock-icon { font-size: 11px; margin-left: 4px; }
+
+/* ── 메인 레이아웃 ── */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── 카드 공통 ── */
+.card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+.card-title {
+  font-size: 17px;
+  font-weight: 900;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-sub {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.65;
+  margin-bottom: 14px;
+}
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.badge-blue { background: var(--blue-light); color: var(--blue); }
+.badge-teal { background: var(--teal-light); color: var(--teal); }
+.badge-amber { background: var(--amber-light); color: #b07300; }
+
+/* ── 수직선 ── */
+.numberline-wrap {
+  position: relative;
+  margin-bottom: 18px;
+}
+.numberline {
+  position: relative;
+  height: 130px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f9fbff, #eef4ff);
+  border: 1.5px solid #dce8fa;
+  padding: 0 20px;
+  user-select: none;
+  overflow: hidden;
+}
+.nl-axis {
+  position: absolute;
+  left: 20px; right: 20px;
+  top: 72px;
+  height: 7px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1a3a7c, #3b6dff 60%, #6b9fff);
+}
+.nl-tick {
+  position: absolute;
+  top: 60px;
+  width: 2.5px; height: 28px;
+  border-radius: 4px;
+  background: #3b5a9a;
+  transform: translateX(-1.25px);
+}
+.nl-minor-tick {
+  position: absolute;
+  top: 67px;
+  width: 1.5px; height: 16px;
+  border-radius: 4px;
+  background: #aabdda;
+  transform: translateX(-0.75px);
+}
+.nl-label {
+  position: absolute;
+  top: 20px;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 900;
+  color: #1a2e50;
+  white-space: nowrap;
+}
+.nl-label.highlight {
+  color: var(--blue);
+  font-size: 18px;
+}
+.nl-label.zero-label {
+  color: var(--red);
+}
+
+/* 마커 */
+.nl-marker {
+  position: absolute;
+  top: 72px;
+  width: 32px; height: 48px;
+  border-radius: 12px;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  border: none;
+  z-index: 10;
+  box-shadow: 0 8px 20px rgba(59,109,255,0.3);
+  transition: box-shadow .15s, transform .1s;
+}
+.nl-marker:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.08); }
+.nl-marker.minute-marker {
+  background: linear-gradient(180deg, #5b8fff, #3b6dff);
+}
+.nl-marker.actual-marker {
+  background: linear-gradient(180deg, #1dc9b8, #0fa896);
+}
+.nl-marker::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: -9px;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 10px solid currentColor;
+}
+.nl-marker.minute-marker { color: #3b6dff; }
+.nl-marker.actual-marker { color: #0fa896; }
+
+.nl-marker-label {
+  position: absolute;
+  top: 96px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  z-index: 9;
+  background: white;
+  border: 1.5px solid rgba(59,109,255,0.2);
+  box-shadow: 0 4px 10px rgba(18,32,53,0.08);
+}
+
+/* 수직선 타이틀 라인 */
+.nl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.nl-title { font-size: 14px; font-weight: 900; }
+.nl-hint { font-size: 12px; color: var(--muted); }
+
+/* ── 연결선 SVG ── */
+.connection-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+  overflow: visible;
+}
+
+/* ── 피드백 패널 ── */
+.feedback-box {
+  margin-top: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all .3s;
+  min-height: 52px;
+}
+.feedback-box.idle {
+  background: #f5f0e8;
+  color: var(--muted);
+  border: 1.5px solid var(--border);
+}
+.feedback-box.correct {
+  background: var(--green-light);
+  color: #1a7a45;
+  border: 1.5px solid var(--green);
+  animation: feedbackPop .35s cubic-bezier(.36,.07,.19,.97);
+}
+.feedback-box.wrong {
+  background: var(--red-light);
+  color: #b02020;
+  border: 1.5px solid var(--red);
+  animation: feedbackShake .4s cubic-bezier(.36,.07,.19,.97);
+}
+.feedback-box.info {
+  background: var(--blue-light);
+  color: #1a3ca0;
+  border: 1.5px solid #99b3ff;
+}
+@keyframes feedbackPop {
+  0%{transform:scale(1)} 40%{transform:scale(1.04)} 100%{transform:scale(1)}
+}
+@keyframes feedbackShake {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 60%{transform:translateX(6px)}
+}
+.feedback-icon { font-size: 22px; flex-shrink: 0; }
+
+/* ── 직접 선 그리기 ── */
+.draw-tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: all .2s;
+}
+.btn-primary {
+  background: var(--purple);
+  color: white;
+  box-shadow: 0 4px 14px rgba(124,77,255,0.3);
+}
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-primary.active {
+  background: var(--red);
+  box-shadow: 0 4px 14px rgba(232,69,69,0.3);
+}
+.btn-ghost {
+  background: white;
+  color: var(--muted);
+  border: 1.5px solid var(--border);
+}
+.btn-ghost:hover { background: #f5f0e8; }
+.draw-hint { font-size: 12px; color: var(--muted); }
+
+/* ── 스킴 체크리스트 ── */
+.scheme-board {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--purple-light);
+  border-radius: 14px;
+  border: 1.5px solid #c5b3ff;
+}
+.scheme-board-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--purple);
+  margin-bottom: 10px;
+}
+.scheme-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4a3880;
+  margin-bottom: 6px;
+  transition: all .3s;
+}
+.scheme-item.acquired { color: var(--green); font-weight: 700; }
+.scheme-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid #c5b3ff;
+  flex-shrink: 0;
+  transition: all .3s;
+}
+.scheme-item.acquired .scheme-dot {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+/* ── 오른쪽 패널 ── */
+.right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 16px;
+}
+
+/* 시계 */
+.clock-card { text-align: center; }
+.clock-wrap {
+  background: linear-gradient(180deg, #f5f8ff, #eaf0ff);
+  border: 1.5px solid #dce8fa;
+  border-radius: 16px;
+  padding: 12px;
+  margin: 12px 0;
+}
+#clockSvg { width: 100%; max-width: 260px; height: auto; }
+.digital-display {
+  background: linear-gradient(135deg, #0d1e3c, #1a3a7c);
+  color: white;
+  border-radius: 14px;
+  padding: 14px;
+}
+.digital-label { font-size: 11px; letter-spacing: .08em; opacity: .7; margin-bottom: 4px; font-weight: 700; }
+.digital-time { font-size: 44px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+
+/* 가이드 카드 */
+.guide-steps { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.guide-step {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 10px;
+  border-radius: 12px;
+  background: #f9f5ee;
+  border: 1.5px solid var(--border);
+  transition: all .3s;
+}
+.guide-step.active-step {
+  background: var(--blue-light);
+  border-color: #99b3ff;
+}
+.step-num {
+  width: 34px; height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: white;
+  color: var(--blue);
+  font-weight: 900;
+  font-size: 14px;
+  border: 1.5px solid #c5d5ff;
+}
+.step-body strong { display: block; font-size: 13px; margin-bottom: 2px; }
+.step-body span { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* 컨트롤 패널 */
+.controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.control-group { display: flex; flex-direction: column; gap: 5px; }
+.control-label { font-size: 12px; font-weight: 700; color: var(--muted); }
+.control-select {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: white;
+  color: var(--text);
+  font-family: var(--font-main);
+  cursor: pointer;
+}
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.toggle-row input[type=checkbox] {
+  width: 18px; height: 18px;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+/* 예측 모드 */
+.predict-panel {
+  background: var(--amber-light);
+  border: 2px solid var(--amber);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 14px;
+}
+.predict-title { font-size: 14px; font-weight: 900; color: #7a5000; margin-bottom: 10px; }
+.predict-question { font-size: 17px; font-weight: 900; color: #4a3000; margin-bottom: 12px; line-height: 1.5; }
+.predict-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.predict-btn {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 2px solid #d4900a;
+  background: white;
+  color: #6a4200;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: var(--font-main);
+}
+.predict-btn:hover { background: var(--amber); color: white; }
+.predict-btn.correct-choice { background: var(--green); border-color: var(--green); color: white; }
+.predict-btn.wrong-choice { background: var(--red-light); border-color: var(--red); color: var(--red); }
+
+/* 단계 잠금 오버레이 */
+.stage-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(253,246,238,0.88);
+  backdrop-filter: blur(3px);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 20;
+}
+.stage-overlay .lock-big { font-size: 40px; }
+.stage-overlay p { font-size: 15px; font-weight: 700; color: var(--muted); text-align: center; }
+.stage-overlay .unlock-hint { font-size: 13px; color: #b0a090; }
+
+/* ×5 점프 애니메이션 */
+@keyframes jumpAlong {
+  0%   { transform: translateX(0) translateY(0); opacity:1; }
+  40%  { transform: translateX(var(--dx)) translateY(-18px); opacity:1; }
+  100% { transform: translateX(var(--dx)) translateY(0); opacity:0; }
+}
+.jump-dot {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--amber);
+  pointer-events: none;
+  z-index: 15;
+  animation: jumpAlong .5s ease-in-out forwards;
+}
+
+/* 별 보상 */
+@keyframes starPop {
+  0%   { transform: scale(0) rotate(-20deg); opacity:0; }
+  60%  { transform: scale(1.3) rotate(10deg); opacity:1; }
+  100% { transform: scale(1) rotate(0deg); opacity:1; }
+}
+.star-reward {
+  display: inline-block;
+  font-size: 28px;
+  animation: starPop .4s cubic-bezier(.36,.07,.19,.97) forwards;
+}
+
+/* 음성 상태 표시 */
+.voice-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 10px;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+}
+.voice-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.voice-dot.speaking { animation: pulse .6s ease-in-out infinite alternate; }
+@keyframes pulse { to { transform: scale(1.5); opacity: .5; } }
+
+/* 반응형 */
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; }
+  .right-col { position: static; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── 헤더 ── -->
+<header class="header">
+  <div>
+    <div class="header-title">🕐 시계 탐험대</div>
+    <div class="header-sub">체화된 도구화 기반 60진법 수직선 학습 앱 · 초등 2학년</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div class="stage-bar">
+      <div class="stage-pill active" id="pill-1" onclick="goStage(1)">1단계 탐색</div>
+      <div class="stage-pill locked" id="pill-2" onclick="goStage(2)">2단계 연결 <span class="lock-icon" id="lock2">🔒</span></div>
+      <div class="stage-pill locked" id="pill-3" onclick="goStage(3)">3단계 예측 <span class="lock-icon" id="lock3">🔒</span></div>
+    </div>
+    <div class="voice-indicator">
+      <div class="voice-dot" id="voiceDot"></div>
+      <span id="voiceStatus">음성 대기 중</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── 메인 ── -->
+<main class="main">
+  <div style="display:flex;flex-direction:column;gap:18px;">
+
+    <!-- 컨트롤 -->
+    <div class="card">
+      <div class="controls-row">
+        <div class="control-group">
+          <div class="control-label">시작 시</div>
+          <select class="control-select" id="baseHour"></select>
+        </div>
+        <div class="control-group">
+          <div class="control-label">세분</div>
+          <select class="control-select" id="subdivision">
+            <option value="1">1칸</option>
+            <option value="2">2칸</option>
+            <option value="5">5칸</option>
+          </select>
+        </div>
+        <div class="control-group" style="justify-content:flex-end;">
+          <label class="toggle-row"><input type="checkbox" id="showClockCk" checked> 시계 보기</label>
+          <label class="toggle-row"><input type="checkbox" id="showDigitalCk" checked> 디지털 시계</label>
+          <label class="toggle-row"><input type="checkbox" id="showConnCk" checked> 연결선</label>
+        </div>
+      </div>
+      <div id="stageDesc" style="font-size:14px;color:var(--muted);line-height:1.7;padding:10px 12px;background:#f5f0e8;border-radius:10px;"></div>
+    </div>
+
+    <!-- 수직선 스택 -->
+    <div style="position:relative;" id="nlStack">
+
+      <!-- 1. 분침 수직선 -->
+      <div class="card" style="margin-bottom:14px;">
+        <div class="nl-header">
+          <div class="nl-title">① 분침이 가리키는 숫자 <span class="badge badge-blue">0 – 12</span></div>
+          <div class="nl-hint">드래그해서 움직여 보자!</div>
+        </div>
+        <p class="card-sub">시계판의 숫자를 이 선 위에서 직접 움직여 봐요. 숫자가 어디에 있는지 느껴 보세요.</p>
+        <div id="minuteLine" class="numberline"></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px;">
+          ⭐ 12는 한 바퀴가 끝나는 자리이면서 동시에 0분이에요.
+        </div>
+      </div>
+
+      <!-- 2. 실제 분 수직선 -->
+      <div class="card" style="margin-bottom:14px;position:relative;" id="stage2Card">
+        <div id="stage2Overlay" class="stage-overlay">
+          <div class="lock-big">🔒</div>
+          <p>1단계를 마치면<br>열려요!</p>
+          <div class="unlock-hint">분침 숫자를 5번 움직여 보세요.</div>
+        </div>
+        <div class="nl-header">
+          <div class="nl-title">② 실제 분 <span class="badge badge-teal">0 – 60</span></div>
+          <div class="nl-hint">분침 숫자 × 5 = 실제 분</div>
+        </div>
+        <p class="card-sub">위의 숫자가 실제로 몇 분인지 이 선에서 찾아봐요. 선을 직접 이어서 연결해 보세요!</p>
+        <div id="actualLine" class="numberline"></div>
+        <div class="draw-tools">
+          <button class="btn btn-primary" id="drawBtn" onclick="toggleDraw()">✏️ 직접 선 이어보기</button>
+          <button class="btn btn-ghost" onclick="clearDraw()">지우기</button>
+          <span class="draw-hint" id="drawHint">버튼을 누른 뒤 위 수직선에서 아래 수직선으로 이어 보세요.</span>
+        </div>
+        <!-- 피드백 -->
+        <div class="feedback-box idle" id="feedback2">
+          <span class="feedback-icon">💡</span>
+          <span>선을 그어서 숫자를 연결해 보세요.</span>
+        </div>
+      </div>
+
+      <!-- 연결 SVG 레이어 -->
+      <svg id="connLayer" class="connection-layer" style="position:absolute;top:0;left:0;pointer-events:none;z-index:6;overflow:visible;"></svg>
+
+      <!-- 3. 시침 수직선 (3단계) -->
+      <div class="card" style="position:relative;" id="stage3Card">
+        <div id="stage3Overlay" class="stage-overlay">
+          <div class="lock-big">🔒</div>
+          <p>2단계를 마치면<br>열려요!</p>
+          <div class="unlock-hint">선 연결을 3번 맞춰 보세요.</div>
+        </div>
+        <div class="nl-header">
+          <div class="nl-title">③ 시침 위치 <span class="badge badge-amber">연속적 이동</span></div>
+          <div class="nl-hint">시침은 정확히 한 숫자에 멈추지 않아요</div>
+        </div>
+        <p class="card-sub">분이 늘어나면 시침은 조금씩 움직여요. 얼마나 움직이는지 직접 살펴봐요!</p>
+        <div id="hourLine" class="numberline"></div>
+
+        <!-- 예측 패널 (3단계) -->
+        <div class="predict-panel" id="predictPanel" style="display:none;">
+          <div class="predict-title">🎯 예측해 보기</div>
+          <div class="predict-question" id="predictQ"></div>
+          <div class="predict-choices" id="predictChoices"></div>
+        </div>
+
+        <div class="feedback-box idle" id="feedback3">
+          <span class="feedback-icon">🕐</span>
+          <span>시침이 어디에 있는지 관찰해 보세요.</span>
+        </div>
+      </div>
+
+    </div><!-- /nlStack -->
+
+    <!-- 스킴 발달 체크리스트 -->
+    <div class="card">
+      <div class="card-title">🧠 내가 알게 된 것들</div>
+      <div class="scheme-board">
+        <div class="scheme-board-title">스킴(Scheme) 발달 현황</div>
+        <div class="scheme-item" id="scheme1">
+          <div class="scheme-dot"></div>
+          <span>분침 숫자는 0부터 12까지 이어진 선 위에 있어요.</span>
+        </div>
+        <div class="scheme-item" id="scheme2">
+          <div class="scheme-dot"></div>
+          <span>분침 숫자 × 5 = 실제 분 수예요.</span>
+        </div>
+        <div class="scheme-item" id="scheme3">
+          <div class="scheme-dot"></div>
+          <span>12는 60분이면서 동시에 0분(처음)이에요.</span>
+        </div>
+        <div class="scheme-item" id="scheme4">
+          <div class="scheme-dot"></div>
+          <span>시침은 두 숫자 사이를 조금씩 이동해요.</span>
+        </div>
+        <div class="scheme-item" id="scheme5">
+          <div class="scheme-dot"></div>
+          <span>숫자를 보지 않아도 몇 분인지 예측할 수 있어요.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 현황 요약 -->
+    <div class="card" id="summaryCard">
+      <div class="card-title">📋 지금 화면 읽기</div>
+      <div id="summaryText" style="font-size:16px;line-height:1.9;color:#2d2012;"></div>
+    </div>
+
+  </div><!-- /left col -->
+
+  <!-- ── 오른쪽 ── -->
+  <aside class="right-col">
+
+    <!-- 시계 -->
+    <div class="card clock-card" id="clockCard">
+      <div class="card-title">⏰ 실시간 시계</div>
+      <div class="clock-wrap">
+        <svg id="clockSvg" viewBox="0 0 300 300"></svg>
+      </div>
+      <div class="digital-display" id="digitalCard">
+        <div class="digital-label">DIGITAL TIME</div>
+        <div class="digital-time" id="digitalTime">1:00</div>
+      </div>
+    </div>
+
+    <!-- 학생 활동 가이드 -->
+    <div class="card">
+      <div class="card-title">📖 활동 순서</div>
+      <div class="guide-steps">
+        <div class="guide-step active-step" id="guide1">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>분침 숫자 움직이기</strong>
+            <span>파란 마커를 드래그해서 숫자를 바꿔 봐요. "3이면 왜 15분일까?" 생각해 봐요.</span>
+          </div>
+        </div>
+        <div class="guide-step" id="guide2">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>실제 분과 선 잇기</strong>
+            <span>위 수직선에서 아래 수직선으로 선을 그어서 규칙을 찾아봐요.</span>
+          </div>
+        </div>
+        <div class="guide-step" id="guide3">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>시침 위치 예측하기</strong>
+            <span>30분과 50분에서 시침이 어디에 있을지 맞춰봐요!</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 교사 관찰 메모 -->
+    <div class="card">
+      <div class="card-title">🔍 교사 관찰 포인트</div>
+      <ul style="font-size:13px;color:var(--muted);line-height:1.9;padding-left:16px;">
+        <li>분침 마커를 먼저 건드리는가, 실제 분 마커를 먼저 건드리는가?</li>
+        <li>×5 관계를 언어로 표현하는가?</li>
+        <li>선 긋기에서 수정 과정이 있는가?</li>
+        <li>예측 오답 후 어떤 전략을 쓰는가?</li>
+        <li>"12가 왜 0분?"을 스스로 설명할 수 있는가?</li>
+      </ul>
+    </div>
+
+  </aside>
+</main>
+
+<script>
+// ════════════════════════════════════════════
+// 상태
+// ════════════════════════════════════════════
+const state = {
+  minutePos: 0,       // 0~12
+  actualMin: 0,       // 0~60
+  hourPos: 1,         // 1~12
+  baseHour: 1,
+  subdivision: 1,
+  showClock: true,
+  showDigital: true,
+  showConn: true,
+  stage: 1,           // 1,2,3
+  stage1Moves: 0,
+  stage2Correct: 0,
+  schemeAcquired: new Set(),
+  isDrawMode: false,
+  userLine: null,
+  pointerLine: null,
+  predictActive: false,
+  predictAnswer: null,
+};
+
+// ════════════════════════════════════════════
+// DOM refs
+// ════════════════════════════════════════════
+const minuteLine   = document.getElementById('minuteLine');
+const actualLine   = document.getElementById('actualLine');
+const hourLine     = document.getElementById('hourLine');
+const connLayer    = document.getElementById('connLayer');
+const clockSvg     = document.getElementById('clockSvg');
+const digitalTime  = document.getElementById('digitalTime');
+const summaryText  = document.getElementById('summaryText');
+const feedback2    = document.getElementById('feedback2');
+const feedback3    = document.getElementById('feedback3');
+const drawBtn      = document.getElementById('drawBtn');
+const drawHint     = document.getElementById('drawHint');
+const stageDesc    = document.getElementById('stageDesc');
+const predictPanel = document.getElementById('predictPanel');
+
+// ════════════════════════════════════════════
+// 초기화
+// ════════════════════════════════════════════
+const baseHourSel = document.getElementById('baseHour');
+for (let i=1;i<=12;i++){
+  const o=document.createElement('option');
+  o.value=i; o.textContent=i+'시에서 시작';
+  baseHourSel.appendChild(o);
+}
+baseHourSel.addEventListener('change',e=>{state.baseHour=+e.target.value;syncFromMinute(state.minutePos);render();});
+document.getElementById('subdivision').addEventListener('change',e=>{state.subdivision=+e.target.value;syncFromMinute(state.minutePos);render();});
+document.getElementById('showClockCk').addEventListener('change',e=>{state.showClock=e.target.checked;render();});
+document.getElementById('showDigitalCk').addEventListener('change',e=>{state.showDigital=e.target.checked;render();});
+document.getElementById('showConnCk').addEventListener('change',e=>{state.showConn=e.target.checked;render();});
+
+// ════════════════════════════════════════════
+// 수직선 유틸
+// ════════════════════════════════════════════
+function getPad(){ return 20; }
+function getW(el){ return el.clientWidth - getPad()*2; }
+function valToX(el,min,max,val){
+  return getPad() + ((val-min)/(max-min))*getW(el);
+}
+function xToVal(el,min,max,x){
+  const cx = Math.max(getPad(), Math.min(el.clientWidth-getPad(), x));
+  return min + ((cx-getPad())/getW(el))*(max-min);
+}
+function snap(v,sub){ return Math.round(v*sub)/sub; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+// ════════════════════════════════════════════
+// 동기화
+// ════════════════════════════════════════════
+function syncFromMinute(raw){
+  state.minutePos = clamp(snap(raw,state.subdivision),0,12);
+  state.actualMin = clamp(Math.round(state.minutePos*5),0,60);
+  state.hourPos   = state.baseHour + state.actualMin/60;
+  while(state.hourPos>12) state.hourPos-=12;
+}
+function syncFromActual(raw){
+  state.actualMin = clamp(Math.round(raw),0,60);
+  state.minutePos = clamp(state.actualMin/5,0,12);
+  state.hourPos   = state.baseHour + state.actualMin/60;
+  while(state.hourPos>12) state.hourPos-=12;
+}
+function getClockNum(i){ return (i===0||i===12)?12:i; }
+
+// ════════════════════════════════════════════
+// 수직선 그리기
+// ════════════════════════════════════════════
+function drawNL(container, min, max, majorStep, fmtFn, highlightVal){
+  container.innerHTML='';
+  const axis=document.createElement('div');
+  axis.className='nl-axis';
+  container.appendChild(axis);
+
+  for(let v=min;v<=max+1e-9;v+=majorStep){
+    const x=valToX(container,min,max,v);
+    const tick=document.createElement('div');
+    tick.className='nl-tick'; tick.style.left=x+'px';
+    container.appendChild(tick);
+
+    const lbl=document.createElement('div');
+    lbl.className='nl-label'+(v===highlightVal?' highlight':'')+(v===0&&min===0?' zero-label':'');
+    lbl.style.left=x+'px';
+    lbl.textContent=fmtFn(v);
+    container.appendChild(lbl);
+
+    if(v<max&&state.subdivision>1){
+      const ms=majorStep/state.subdivision;
+      for(let i=1;i<state.subdivision;i++){
+        const mx=valToX(container,min,max,v+i*ms);
+        const mt=document.createElement('div');
+        mt.className='nl-minor-tick'; mt.style.left=mx+'px';
+        container.appendChild(mt);
+      }
+    }
+  }
+}
+
+function addMarker(container,x,label,cls,onDrag){
+  const m=document.createElement('button');
+  m.type='button';
+  m.className='nl-marker '+cls;
+  m.style.left=x+'px';
+  container.appendChild(m);
+
+  const lbl=document.createElement('div');
+  lbl.className='nl-marker-label';
+  lbl.style.left=x+'px';
+  lbl.textContent=label;
+  container.appendChild(lbl);
+
+  const drag=clientX=>{
+    const rect=container.getBoundingClientRect();
+    onDrag(clientX-rect.left);
+  };
+  const up=()=>{
+    window.removeEventListener('pointermove',mv);
+    window.removeEventListener('pointerup',up);
+  };
+  const mv=e=>drag(e.clientX);
+  m.addEventListener('pointerdown',e=>{
+    if(state.isDrawMode) return;
+    e.preventDefault();
+    drag(e.clientX);
+    window.addEventListener('pointermove',mv);
+    window.addEventListener('pointerup',up);
+  });
+}
+
+// ════════════════════════════════════════════
+// 연결선 렌더
+// ════════════════════════════════════════════
+function renderConn(){
+  connLayer.innerHTML='';
+  if(!state.showConn&&!state.userLine&&!state.pointerLine) return;
+
+  const stackRect=document.getElementById('nlStack').getBoundingClientRect();
+  const mr=minuteLine.getBoundingClientRect();
+  const ar=actualLine.getBoundingClientRect();
+  const svgW=document.getElementById('nlStack').clientWidth;
+  const svgH=document.getElementById('nlStack').clientHeight;
+
+  connLayer.setAttribute('viewBox',`0 0 ${svgW} ${svgH}`);
+  connLayer.setAttribute('width',svgW);
+  connLayer.setAttribute('height',svgH);
+
+  const mAxisY = mr.top-stackRect.top+72;
+  const aAxisY = ar.top-stackRect.top+72;
+  const mX = mr.left-stackRect.left + valToX(minuteLine,0,12,state.minutePos);
+  const aX = ar.left-stackRect.left + valToX(actualLine,0,60,state.actualMin);
+
+  if(state.showConn){
+    // 주 연결선
+    const line=makeSvgEl('line',{x1:mX,y1:mAxisY,x2:aX,y2:aAxisY,
+      stroke:'#e84545','stroke-width':'4','stroke-linecap':'round'});
+    connLayer.appendChild(line);
+
+    [mX,aX].forEach((cx,i)=>{
+      const c=makeSvgEl('circle',{cx,cy:i===0?mAxisY:aAxisY,r:5,fill:'#e84545'});
+      connLayer.appendChild(c);
+    });
+
+    // ×5 라벨
+    const lx=(mX+aX)/2, ly=(mAxisY+aAxisY)/2;
+    const bg=makeSvgEl('rect',{x:lx-22,y:ly-14,width:44,height:24,rx:12,
+      fill:'#fff1f2',stroke:'#fecdd3','stroke-width':'1.5'});
+    connLayer.appendChild(bg);
+    const txt=makeSvgEl('text',{x:lx,y:ly+2,'text-anchor':'middle',
+      'font-size':'13','font-weight':'900',fill:'#e11d48'});
+    txt.textContent='×5';
+    connLayer.appendChild(txt);
+  }
+
+  // 사용자 선
+  const dl = state.pointerLine||state.userLine;
+  if(dl){
+    const ul=makeSvgEl('line',{x1:dl.x1,y1:dl.y1,x2:dl.x2,y2:dl.y2,
+      stroke:'#7c4dff','stroke-width':'5','stroke-linecap':'round'});
+    connLayer.appendChild(ul);
+  }
+}
+
+function makeSvgEl(tag,attrs){
+  const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
+  Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));
+  return el;
+}
+
+// ════════════════════════════════════════════
+// 시계 렌더
+// ════════════════════════════════════════════
+function renderClock(){
+  clockSvg.innerHTML='';
+  const cx=150,cy=150,r=108;
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  defs.innerHTML=`<linearGradient id="fg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#edf4ff"/></linearGradient>`;
+  clockSvg.appendChild(defs);
+
+  // 외곽
+  const glow=makeSvgEl('circle',{cx,cy,r:r+8,fill:'rgba(59,109,255,0.07)'});
+  clockSvg.appendChild(glow);
+  const face=makeSvgEl('circle',{cx,cy,r,fill:'url(#fg)',stroke:'#17346b','stroke-width':'4'});
+  clockSvg.appendChild(face);
+
+  // 눈금 + 숫자
+  for(let i=1;i<=12;i++){
+    const ang=i*30, rad=(ang-90)*Math.PI/180;
+    const x1=cx+(r-3)*Math.cos(rad), y1=cy+(r-3)*Math.sin(rad);
+    const x2=cx+(r-18)*Math.cos(rad), y2=cy+(r-18)*Math.sin(rad);
+    const tx=cx+(r-34)*Math.cos(rad), ty=cy+(r-34)*Math.sin(rad);
+    clockSvg.appendChild(makeSvgEl('line',{x1,y1,x2,y2,stroke:'#334e80','stroke-width':'3','stroke-linecap':'round'}));
+    const t=makeSvgEl('text',{x:tx,y:ty+7,'text-anchor':'middle','font-size':'19','font-weight':'900',fill:'#10203c'});
+    t.textContent=i; clockSvg.appendChild(t);
+  }
+  for(let i=0;i<60;i++){
+    if(i%5===0) continue;
+    const ang=i*6, rad=(ang-90)*Math.PI/180;
+    clockSvg.appendChild(makeSvgEl('line',{
+      x1:cx+(r-6)*Math.cos(rad),y1:cy+(r-6)*Math.sin(rad),
+      x2:cx+(r-13)*Math.cos(rad),y2:cy+(r-13)*Math.sin(rad),
+      stroke:'#aab8d3','stroke-width':'1.5','stroke-linecap':'round'}));
+  }
+
+  // 분침
+  const mAng=(state.minutePos*30-90)*Math.PI/180;
+  const mX=cx+(r-24)*Math.cos(mAng), mY=cy+(r-24)*Math.sin(mAng);
+  clockSvg.appendChild(makeSvgEl('line',{x1:cx,y1:cy,x2:mX,y2:mY,stroke:'#3b6dff','stroke-width':'6','stroke-linecap':'round'}));
+
+  // 시침
+  const hAng=(state.hourPos*30-90)*Math.PI/180;
+  const hX=cx+(r-58)*Math.cos(hAng), hY=cy+(r-58)*Math.sin(hAng);
+  clockSvg.appendChild(makeSvgEl('line',{x1:cx,y1:cy,x2:hX,y2:hY,stroke:'#e84545','stroke-width':'8','stroke-linecap':'round'}));
+
+  // 중심점
+  clockSvg.appendChild(makeSvgEl('circle',{cx,cy,r:8,fill:'white',stroke:'#17346b','stroke-width':'3'}));
+  clockSvg.appendChild(makeSvgEl('circle',{cx,cy,r:4,fill:'#17346b'}));
+}
+
+// ════════════════════════════════════════════
+// 요약 텍스트
+// ════════════════════════════════════════════
+function descMinute(p){
+  const b=Math.floor(clamp(p,0,12));
+  const f=clamp(p,0,12)-b;
+  const bl=b===0?12:b, nl=b>=11?12:b+1;
+  if(f<0.125) return `${bl}`;
+  if(f<0.375) return `${bl}에서 조금 지난 곳`;
+  if(f<0.625) return `${bl}와 ${nl}의 가운데쯤`;
+  if(f<0.875) return `${nl}에 가까운 곳`;
+  return `${nl}`;
+}
+function descHour(h){
+  let v=h; while(v>12) v-=12; while(v<=0) v+=12;
+  const b=Math.floor(v), f=v-b, n=b===12?1:b+1;
+  if(f<0.125) return `${b}`;
+  if(f<0.375) return `${b}에서 조금 지난 곳`;
+  if(f<0.625) return `${b}와 ${n}의 가운데쯤`;
+  if(f<0.875) return `${n}에 가까운 곳`;
+  return `${n}`;
+}
+function fmtTime(){
+  const m=Math.round(state.actualMin);
+  let h=state.baseHour;
+  if(m===60) h=h===12?1:h+1;
+  return `${h}:${String(m===60?0:m).padStart(2,'0')}`;
+}
+
+// ════════════════════════════════════════════
+// 피드백 & 음성
+// ════════════════════════════════════════════
+function setFeedback(el, type, icon, msg){
+  el.className='feedback-box '+type;
+  el.innerHTML=`<span class="feedback-icon">${icon}</span><span>${msg}</span>`;
+}
+
+function speak(text){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt=new SpeechSynthesisUtterance(text);
+  utt.lang='ko-KR'; utt.rate=0.95; utt.pitch=1.1;
+  const dot=document.getElementById('voiceDot');
+  const vs=document.getElementById('voiceStatus');
+  utt.onstart=()=>{ dot.classList.add('speaking'); vs.textContent='말하는 중...'; };
+  utt.onend=()=>{ dot.classList.remove('speaking'); vs.textContent='음성 대기 중'; };
+  window.speechSynthesis.speak(utt);
+}
+
+// ════════════════════════════════════════════
+// 스킴 획득
+// ════════════════════════════════════════════
+function acquireScheme(id){
+  if(state.schemeAcquired.has(id)) return;
+  state.schemeAcquired.add(id);
+  const el=document.getElementById('scheme'+id);
+  if(el){
+    el.classList.add('acquired');
+    el.querySelector('.scheme-dot').textContent='✓';
+    speak('잘했어요! 하나 알게 됐어요!');
+  }
+}
+
+// ════════════════════════════════════════════
+// 단계 전환
+// ════════════════════════════════════════════
+const STAGE_DESC = [
+  '',
+  '🔵 1단계: 분침 숫자를 드래그해서 위치를 느껴봐요. 시계판의 숫자들이 선 위에 어떻게 놓이는지 탐색해 보세요.',
+  '🟢 2단계: 분침 숫자와 실제 분을 선으로 이어봐요. 어떤 규칙이 있는지 직접 찾아보세요!',
+  '🟡 3단계: 시침이 어디에 있을지 예측해봐요. 분 수를 보고 시침 위치를 맞춰보세요!'
+];
+
+function goStage(n){
+  if(n>state.stage) return; // 잠긴 단계
+  state.stage=n;
+  updateStageUI();
+  render();
+}
+
+function tryUnlockStage(n){
+  if(state.stage>=n) return;
+  state.stage=n;
+  const pill=document.getElementById('pill-'+n);
+  pill.classList.remove('locked');
+  pill.classList.add('active');
+  document.getElementById('pill-'+(n-1)).classList.remove('active');
+  document.getElementById('pill-'+(n-1)).classList.add('done');
+  if(n===2){
+    document.getElementById('stage2Overlay').style.display='none';
+    document.getElementById('guide2').classList.add('active-step');
+    document.getElementById('guide1').classList.remove('active-step');
+    speak('잘했어요! 2단계가 열렸어요. 이제 선을 이어봐요!');
+  }
+  if(n===3){
+    document.getElementById('stage3Overlay').style.display='none';
+    document.getElementById('guide3').classList.add('active-step');
+    document.getElementById('guide2').classList.remove('active-step');
+    document.getElementById('predictPanel').style.display='block';
+    makePredictQuestion();
+    speak('대단해요! 3단계가 열렸어요. 이제 예측해 봐요!');
+  }
+  updateStageUI();
+}
+
+function updateStageUI(){
+  stageDesc.textContent=STAGE_DESC[state.stage];
+  [1,2,3].forEach(i=>{
+    const p=document.getElementById('pill-'+i);
+    p.classList.remove('active','done');
+    if(i<state.stage) p.classList.add('done');
+    else if(i===state.stage) p.classList.add('active');
+  });
+}
+
+// ════════════════════════════════════════════
+// 직접 선 그리기
+// ════════════════════════════════════════════
+function toggleDraw(){
+  state.isDrawMode=!state.isDrawMode;
+  drawBtn.classList.toggle('active',state.isDrawMode);
+  drawHint.textContent=state.isDrawMode
+    ? '위 수직선에서 시작해 아래 수직선까지 곧게 이어요!'
+    : '버튼을 눌러 직접 선을 그어봐요.';
+  state.pointerLine=null;
+  render();
+}
+function clearDraw(){
+  state.userLine=null; state.pointerLine=null;
+  state.isDrawMode=false;
+  drawBtn.classList.remove('active');
+  setFeedback(feedback2,'idle','💡','선을 그어서 숫자를 연결해 보세요.');
+  render();
+}
+
+function getCoords(clientX,clientY){
+  const stackRect=document.getElementById('nlStack').getBoundingClientRect();
+  const mr=minuteLine.getBoundingClientRect();
+  const ar=actualLine.getBoundingClientRect();
+  return {
+    x: clientX-stackRect.left,
+    y: clientY-stackRect.top,
+    mTop: mr.top-stackRect.top,
+    mBottom: mr.bottom-stackRect.top,
+    aTop: ar.top-stackRect.top,
+    aBottom: ar.bottom-stackRect.top,
+    mAxisY: mr.top-stackRect.top+72,
+    aAxisY: ar.top-stackRect.top+72,
+    mLeft: mr.left-stackRect.left,
+    aLeft: ar.left-stackRect.left,
+  };
+}
+
+document.getElementById('nlStack').addEventListener('pointerdown',e=>{
+  if(!state.isDrawMode) return;
+  const c=getCoords(e.clientX,e.clientY);
+  if(c.y<c.mTop||c.y>c.mBottom) return;
+
+  state.pointerLine={x1:c.x,y1:c.mAxisY,x2:c.x,y2:c.mAxisY};
+  render();
+
+  const mv=ev=>{
+    const cc=getCoords(ev.clientX,ev.clientY);
+    state.pointerLine={...state.pointerLine,x2:cc.x,y2:cc.y};
+    render();
+  };
+  const up=ev=>{
+    const cc=getCoords(ev.clientX,ev.clientY);
+    if(cc.y>=cc.aTop&&cc.y<=cc.aBottom){
+      // 선 정확도 판정
+      const stackRect=document.getElementById('nlStack').getBoundingClientRect();
+      const mr=minuteLine.getBoundingClientRect();
+      const ar=actualLine.getBoundingClientRect();
+      const startXinMin=(state.pointerLine.x1)-(mr.left-stackRect.left);
+      const endXinAct=cc.x-(ar.left-stackRect.left);
+      const drawnMinVal=xToVal(minuteLine,0,12,startXinMin);
+      const drawnActVal=xToVal(actualLine,0,60,endXinAct);
+      const expectedAct=Math.round(drawnMinVal)*5;
+      const diff=Math.abs(drawnActVal-expectedAct);
+
+      state.userLine={x1:state.pointerLine.x1,y1:state.pointerLine.y1,x2:cc.x,y2:cc.aAxisY};
+
+      if(diff<=7){
+        setFeedback(feedback2,'correct','🎉',`맞아요! ${Math.round(drawnMinVal)} × 5 = ${expectedAct}분이에요!`);
+        speak(`정답! ${Math.round(drawnMinVal)} 곱하기 5는 ${expectedAct}분이에요!`);
+        acquireScheme(2);
+        if(Math.round(drawnMinVal)===12||Math.round(drawnMinVal)===0) acquireScheme(3);
+        state.stage2Correct++;
+        spawnJumpDots(state.pointerLine.x1,state.pointerLine.y1,cc.x,cc.aAxisY);
+        if(state.stage2Correct>=3) tryUnlockStage(3);
+      } else {
+        setFeedback(feedback2,'wrong','😅',`다시 해봐요! ${Math.round(drawnMinVal)}에서 아래로 곧게 이어봐요.`);
+        speak('아, 조금 달라요. 다시 이어봐요!');
+        setTimeout(()=>setFeedback(feedback2,'idle','💡','선을 그어서 숫자를 연결해 보세요.'),2500);
+      }
+    }
+    state.pointerLine=null;
+    state.isDrawMode=false;
+    drawBtn.classList.remove('active');
+    render();
+    window.removeEventListener('pointermove',mv);
+    window.removeEventListener('pointerup',up);
+  };
+  window.addEventListener('pointermove',mv);
+  window.addEventListener('pointerup',up);
+});
+
+// ×5 점프 파티클
+function spawnJumpDots(x1,y1,x2,y2){
+  const stack=document.getElementById('nlStack');
+  for(let i=0;i<5;i++){
+    setTimeout(()=>{
+      const d=document.createElement('div');
+      d.className='jump-dot';
+      const sx=x1+(x2-x1)*(i/4);
+      d.style.left=sx+'px'; d.style.top=(y1-5)+'px';
+      const dx=(x2-x1)*(1-i/4);
+      d.style.setProperty('--dx',dx+'px');
+      stack.appendChild(d);
+      setTimeout(()=>d.remove(),600);
+    },i*80);
+  }
+}
+
+// ════════════════════════════════════════════
+// 3단계 예측
+// ════════════════════════════════════════════
+function makePredictQuestion(){
+  const mins=[5,10,15,20,25,30,35,40,45,50,55];
+  const correct=mins[Math.floor(Math.random()*mins.length)];
+  state.predictAnswer=correct;
+  const wrongPool=mins.filter(m=>m!==correct);
+  const w1=wrongPool[Math.floor(Math.random()*wrongPool.length)];
+  let w2=wrongPool[Math.floor(Math.random()*wrongPool.length)];
+  while(w2===w1) w2=wrongPool[Math.floor(Math.random()*wrongPool.length)];
+  const choices=[correct,w1,w2].sort(()=>Math.random()-.5);
+
+  const mNum=correct/5;
+  document.getElementById('predictQ').textContent=
+    `분침이 ${mNum}을 가리키면 실제로 몇 분일까요?`;
+
+  const container=document.getElementById('predictChoices');
+  container.innerHTML='';
+  choices.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='predict-btn';
+    btn.textContent=c+'분';
+    btn.onclick=()=>checkPredict(c,btn,choices,container);
+    container.appendChild(btn);
+  });
+}
+
+function checkPredict(chosen,btn,choices,container){
+  const correct=state.predictAnswer;
+  if(chosen===correct){
+    btn.classList.add('correct-choice');
+    setFeedback(feedback3,'correct','🏆',`정답! ${correct/5} × 5 = ${correct}분이에요!`);
+    speak(`정답! ${correct/5} 곱하기 5는 ${correct}분이에요!`);
+    acquireScheme(5);
+    container.querySelectorAll('.predict-btn').forEach(b=>b.disabled=true);
+    setTimeout(makePredictQuestion,2000);
+  } else {
+    btn.classList.add('wrong-choice');
+    setFeedback(feedback3,'wrong','🤔',`아깝지만 아니에요. 다시 생각해봐요!`);
+    speak('아깝지만 아니에요. 다시 생각해봐요!');
+    setTimeout(()=>btn.classList.remove('wrong-choice'),1200);
+  }
+}
+
+// ════════════════════════════════════════════
+// 메인 렌더
+// ════════════════════════════════════════════
+function render(){
+  // 수직선 그리기
+  drawNL(minuteLine,0,12,1,v=>getClockNum(v)+'',state.minutePos);
+  drawNL(actualLine,0,60,5,v=>v+'',state.actualMin);
+  drawNL(hourLine,1,12,1,v=>v+'',null);
+
+  const mX=valToX(minuteLine,0,12,state.minutePos);
+  const aX=valToX(actualLine,0,60,state.actualMin);
+  const hX=valToX(hourLine,1,12,state.hourPos);
+
+  addMarker(minuteLine,mX,`분침: ${descMinute(state.minutePos)}`,'minute-marker',x=>{
+    syncFromMinute(xToVal(minuteLine,0,12,x));
+    state.stage1Moves++;
+    // 스킴 1 획득
+    if(state.stage1Moves>=3) acquireScheme(1);
+    // 1단계 → 2단계 잠금 해제
+    if(state.stage1Moves>=5) tryUnlockStage(2);
+    const vm=Math.round(state.minutePos);
+    const va=state.actualMin;
+    if(vm>0&&va>0){
+      setFeedback(feedback2,'info','💡',`분침 ${vm} → 실제로는 ${va}분! (${vm}×5=${va})`);
+      if(vm===state.stage1Moves%12+1) speak(`분침 ${vm}, 실제로는 ${va}분이에요.`);
+    }
+    render();
+  });
+
+  addMarker(actualLine,aX,`${Math.round(state.actualMin)}분`,'actual-marker',x=>{
+    syncFromActual(xToVal(actualLine,0,60,x));
+    render();
+  });
+
+  addMarker(hourLine,hX,`시침: ${descHour(state.hourPos)}`,'minute-marker',x=>{
+    // 시침 탐색 스킴 4
+    acquireScheme(4);
+    render();
+  });
+
+  renderConn();
+
+  // 시계
+  document.getElementById('clockCard').style.display=state.showClock?'':'none';
+  if(state.showClock){
+    renderClock();
+    document.getElementById('digitalCard').style.display=state.showDigital?'':'none';
+    if(state.showDigital) digitalTime.textContent=fmtTime();
+  }
+
+  // 요약
+  const nh=state.baseHour===12?1:state.baseHour+1;
+  summaryText.innerHTML=`
+    시작: <strong>${state.baseHour}시</strong> &nbsp;|&nbsp;
+    분침: <strong>${descMinute(state.minutePos)}</strong> 위치<br>
+    실제 분: <strong>${Math.round(state.actualMin)}분</strong>
+    (${Math.round(state.minutePos)}×5=${Math.round(state.actualMin)})<br>
+    시침: <strong>${state.baseHour}와 ${nh} 사이</strong>에서 <strong>${descHour(state.hourPos)}</strong>
+  `;
+}
+
+// ── 초기 실행 ──
+updateStageUI();
+syncFromMinute(state.minutePos);
+setFeedback(feedback2,'idle','💡','선을 그어서 숫자를 연결해 보세요.');
+setFeedback(feedback3,'idle','🕐','시침이 어디에 있는지 관찰해 보세요.');
+stageDesc.textContent=STAGE_DESC[1];
+window.addEventListener('resize',render);
+render();
+</script>
+</body>
+</html>
