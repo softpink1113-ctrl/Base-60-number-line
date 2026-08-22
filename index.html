@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -264,6 +263,13 @@ body {
   pointer-events: none;
   z-index: 6;
   overflow: visible;
+}
+
+/* 모바일에서 선을 그리는 동안 화면 스크롤/확대 동작과 충돌하지 않게 한다. */
+#nlStack.draw-active {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ── 피드백 패널 ── */
@@ -616,7 +622,7 @@ body {
         <div class="control-group" style="justify-content:flex-end;">
           <label class="toggle-row"><input type="checkbox" id="showClockCk" checked> 시계 보기</label>
           <label class="toggle-row"><input type="checkbox" id="showDigitalCk" checked> 디지털 시계</label>
-          <label class="toggle-row"><input type="checkbox" id="showConnCk" checked> 연결선</label>
+          <label class="toggle-row"><input type="checkbox" id="showConnCk"> 정답 연결선 보기</label>
         </div>
       </div>
       <div id="stageDesc" style="font-size:14px;color:var(--muted);line-height:1.7;padding:10px 12px;background:#f5f0e8;border-radius:10px;"></div>
@@ -801,7 +807,7 @@ const state = {
   subdivision: 1,
   showClock: true,
   showDigital: true,
-  showConn: true,
+  showConn: false,
   stage: 1,           // 1,2,3
   stage1Moves: 0,
   stage2Correct: 0,
@@ -1171,6 +1177,12 @@ function updateStageUI(){
 // ════════════════════════════════════════════
 function toggleDraw(){
   state.isDrawMode=!state.isDrawMode;
+  if(state.isDrawMode){
+    // 직접 이어 보는 동안에는 정답 연결선을 감춘다.
+    state.showConn=false;
+    document.getElementById('showConnCk').checked=false;
+  }
+  document.getElementById('nlStack').classList.toggle('draw-active',state.isDrawMode);
   drawBtn.classList.toggle('active',state.isDrawMode);
   drawHint.textContent=state.isDrawMode
     ? '위 수직선에서 시작해 아래 수직선까지 곧게 이어요!'
@@ -1181,6 +1193,7 @@ function toggleDraw(){
 function clearDraw(){
   state.userLine=null; state.pointerLine=null;
   state.isDrawMode=false;
+  document.getElementById('nlStack').classList.remove('draw-active');
   drawBtn.classList.remove('active');
   setFeedback(feedback2,'idle','💡','선을 그어서 숫자를 연결해 보세요.');
   render();
@@ -1204,20 +1217,30 @@ function getCoords(clientX,clientY){
   };
 }
 
-document.getElementById('nlStack').addEventListener('pointerdown',e=>{
+const nlStack=document.getElementById('nlStack');
+
+nlStack.addEventListener('pointerdown',e=>{
   if(!state.isDrawMode) return;
   const c=getCoords(e.clientX,e.clientY);
   if(c.y<c.mTop||c.y>c.mBottom) return;
+
+  e.preventDefault();
+  const activePointerId=e.pointerId;
+  if(nlStack.setPointerCapture) nlStack.setPointerCapture(activePointerId);
 
   state.pointerLine={x1:c.x,y1:c.mAxisY,x2:c.x,y2:c.mAxisY};
   render();
 
   const mv=ev=>{
+    if(ev.pointerId!==activePointerId) return;
+    ev.preventDefault();
     const cc=getCoords(ev.clientX,ev.clientY);
     state.pointerLine={...state.pointerLine,x2:cc.x,y2:cc.y};
     render();
   };
   const up=ev=>{
+    if(ev.pointerId!==activePointerId) return;
+    ev.preventDefault();
     const cc=getCoords(ev.clientX,ev.clientY);
     if(cc.y>=cc.aTop&&cc.y<=cc.aBottom){
       // 선 정확도 판정
@@ -1249,13 +1272,30 @@ document.getElementById('nlStack').addEventListener('pointerdown',e=>{
     }
     state.pointerLine=null;
     state.isDrawMode=false;
+    nlStack.classList.remove('draw-active');
     drawBtn.classList.remove('active');
     render();
-    window.removeEventListener('pointermove',mv);
-    window.removeEventListener('pointerup',up);
+    nlStack.removeEventListener('pointermove',mv);
+    nlStack.removeEventListener('pointerup',up);
+    nlStack.removeEventListener('pointercancel',cancel);
+    if(nlStack.releasePointerCapture&&nlStack.hasPointerCapture(activePointerId)){
+      nlStack.releasePointerCapture(activePointerId);
+    }
   };
-  window.addEventListener('pointermove',mv);
-  window.addEventListener('pointerup',up);
+  const cancel=ev=>{
+    if(ev.pointerId!==activePointerId) return;
+    state.pointerLine=null;
+    state.isDrawMode=false;
+    nlStack.classList.remove('draw-active');
+    drawBtn.classList.remove('active');
+    nlStack.removeEventListener('pointermove',mv);
+    nlStack.removeEventListener('pointerup',up);
+    nlStack.removeEventListener('pointercancel',cancel);
+    render();
+  };
+  nlStack.addEventListener('pointermove',mv);
+  nlStack.addEventListener('pointerup',up);
+  nlStack.addEventListener('pointercancel',cancel);
 });
 
 // ×5 점프 파티클
